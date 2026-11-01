@@ -1,0 +1,10 @@
+prefix=@MFAOA_PC_PREFIX@
+libdir=@MFAOA_PC_LIBDIR@
+includedir=@MFAOA_PC_INCLUDEDIR@
+
+Name: mfaoa
+Description: Mean-field approximate optimization algorithm for binary quadratic problems
+Version: @PROJECT_VERSION@
+Cflags: -I${includedir}@MFAOA_PC_CFLAGS@
+Libs: -L${libdir} -lmfaoa
+Libs.private: @MFAOA_PC_LIBS_PRIVATE@

@@ -1,0 +1,19 @@
+# find_package(mfaoa) for an installed libmfaoa; provides the target mfaoa::mfaoa.
+
+@PACKAGE_INIT@
+
+# A static libmfaoa leaves linking its BLAS to the program that uses it, so
+# that program needs the same BLAS. A shared one has it linked already.
+if(@MFAOA_STATIC_LIBRARY@)
+  include(CMakeFindDependencyMacro)
+  if(NOT DEFINED BLA_VENDOR AND NOT "@BLA_VENDOR@" STREQUAL "")
+    set(BLA_VENDOR "@BLA_VENDOR@")
+    find_dependency(BLAS)
+    unset(BLA_VENDOR)
+  else()
+    find_dependency(BLAS)
+  endif()
+endif()
+
+include("${CMAKE_CURRENT_LIST_DIR}/mfaoaTargets.cmake")
+check_required_components(mfaoa)
