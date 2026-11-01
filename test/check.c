@@ -11,6 +11,11 @@
  * components may differ in the last bits, from another BLAS or another
  * sin and cos, so they are compared with a tolerance; σ must agree exactly.
  *
+ * Every case with dense couplings runs twice: with the library's own BLAS
+ * and with a dgemv passed in the problem, as the Python package passes
+ * SciPy's. Built with -DCHECK_NO_BLAS, for a library without BLAS, the first
+ * run must be rejected instead.
+ *
  * Also checks mfaoa_linear_schedule against the schedule of the first case,
  * which is the linear one with p = 40 and τ = 0.5, and mfaoa_version against
  * the header. Exits nonzero if any check fails.
@@ -85,14 +90,36 @@ static int read_case(FILE *f, golden_case *c)
     return 0;
 }
 
-/* Run one case; returns 1 if it passes and prints a line either way. */
-static int run_case(const golden_case *c)
+/* A dgemv in the Fortran calling convention, as a caller passes it in
+ * mfaoa_problem: y = alpha A x + beta y with A column-major, for trans = "N".
+ * Counts its calls. */
+static long dgemv_calls = 0;
+static void caller_dgemv(char *trans, int *m, int *n, double *alpha, double *a, int *lda,
+                         double *x, int *incx, double *beta, double *y, int *incy)
+{
+    dgemv_calls++;
+    if (*trans != 'N') abort();
+    for (int i = 0; i < *m; i++) y[i * *incy] *= *beta;
+    for (int j = 0; j < *n; j++) {
+        const double ax = *alpha * x[j * *incx];
+        for (int i = 0; i < *m; i++) y[i * *incy] += a[i + (size_t)j * *lda] * ax;
+    }
+}
+
+/* Run one case, with the dense product through dgemv (NULL for the library's
+ * own); returns 1 if it passes and prints a line either way. */
+static int run_case(const golden_case *c, mfaoa_dgemv_fn dgemv)
 {
     mfaoa_problem prob = {
         .n = c->n, .h = c->h, .J = c->J,
         .colptr = c->colptr, .rowval = c->rowval, .nzval = c->nzval,
         .delta = c->delta, .scale = c->scale, .sense = (int32_t)c->sense,
+        .dgemv = dgemv,
     };
+    int64_t expect = c->expect;
+#if defined(CHECK_NO_BLAS)
+    if (c->J != NULL && dgemv == NULL) expect = MFAOA_INVALID_ARGUMENT;
+#endif
     mfaoa_schedule sched = {.p = c->p, .beta = c->beta, .gamma = c->gamma};
     const size_t n = (size_t)c->n;
     mfaoa_workspace ws = {
@@ -101,7 +128,7 @@ static int run_case(const golden_case *c)
         .sigma = malloc(n), .group = malloc(n * sizeof(int64_t)),
     };
     int32_t code = mfaoa_solve(&prob, &sched, &ws);
-    int ok = code == c->expect;
+    int ok = code == expect;
     double dz = 0.0;
     int64_t flips = 0;
     if (ok && code == MFAOA_OK) {
@@ -115,8 +142,10 @@ static int run_case(const golden_case *c)
             flips += ws.group[i] != c->group[i] || ws.sigma[i] != c->sigma[i];
         ok = flips == 0;
     }
-    printf("%-4s %-30s code %d (expected %lld)  max|Δz| %.1e  σ differs at %lld\n",
-           ok ? "ok" : "FAIL", c->name, code, (long long)c->expect, dz, (long long)flips);
+    char name[160];
+    snprintf(name, sizeof name, "%s%s", c->name, dgemv ? ", caller's dgemv" : "");
+    printf("%-4s %-46s code %d (expected %lld)  max|Δz| %.1e  σ differs at %lld\n",
+           ok ? "ok" : "FAIL", name, code, (long long)expect, dz, (long long)flips);
     free(ws.x); free(ws.y); free(ws.z); free(ws.m); free(ws.sigma); free(ws.group);
     return ok;
 }
@@ -158,8 +187,16 @@ int main(int argc, char **argv)
             failures += !linear_schedule_matches(&c);
         }
         checks++;
-        failures += !run_case(&c);
+        failures += !run_case(&c, NULL);
+        if (c.J != NULL) {
+            checks++;
+            failures += !run_case(&c, caller_dgemv);
+        }
     }
+    checks++;
+    printf("%-4s the caller's dgemv was called %ld times\n", dgemv_calls > 0 ? "ok" : "FAIL",
+           dgemv_calls);
+    failures += dgemv_calls == 0;
     printf("%d of %d checks passed\n", checks - failures, checks);
     return failures != 0;
 }

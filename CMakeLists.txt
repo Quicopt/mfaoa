@@ -9,6 +9,10 @@
 # own header. Choose a BLAS with -DBLA_VENDOR=OpenBLAS (or FLAME for BLIS,
 # Apple, ...), and point CMake to an installation outside the default paths
 # with -DCMAKE_PREFIX_PATH.
+#
+# -DMFAOA_BLAS=OFF builds the library without a BLAS. Callers must then pass
+# a dgemv in every problem with dense couplings (see mfaoa_problem.dgemv);
+# the Python package does that with SciPy's.
 
 cmake_minimum_required(VERSION 3.21)
 
@@ -28,8 +32,11 @@ if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
 endif()
 option(BUILD_SHARED_LIBS "Build a shared library rather than a static one" ON)
 option(MFAOA_BUILD_TESTS "Build the tests and the example" ${PROJECT_IS_TOP_LEVEL})
+option(MFAOA_BLAS "Link a BLAS for dense couplings" ON)
 
-find_package(BLAS REQUIRED)
+if(MFAOA_BLAS)
+  find_package(BLAS REQUIRED)
+endif()
 
 add_library(mfaoa src/mfaoa.c)
 add_library(mfaoa::mfaoa ALIAS mfaoa)
@@ -58,7 +65,6 @@ if(CMAKE_C_COMPILER_ID MATCHES "Clang|GNU" AND NOT MSVC)
   target_compile_options(mfaoa PRIVATE -ffp-contract=off)
 endif()
 
-target_link_libraries(mfaoa PRIVATE BLAS::BLAS)
 if(UNIX AND NOT APPLE)
   target_link_libraries(mfaoa PRIVATE m)
 endif()
@@ -66,9 +72,13 @@ endif()
 # every other BLAS ships cblas.h, usually in the include folder next to it,
 # which is searched first. Frameworks are never searched: on macOS the one
 # cblas.h there is Accelerate's.
-if(BLAS_LIBRARIES MATCHES "Accelerate")
+if(NOT MFAOA_BLAS)
+  target_compile_definitions(mfaoa PRIVATE MFAOA_NO_BLAS)
+elseif(BLAS_LIBRARIES MATCHES "Accelerate")
+  target_link_libraries(mfaoa PRIVATE BLAS::BLAS)
   target_compile_definitions(mfaoa PRIVATE MFAOA_ACCELERATE)
 else()
+  target_link_libraries(mfaoa PRIVATE BLAS::BLAS)
   list(GET BLAS_LIBRARIES 0 _mfaoa_blas_library)
   get_filename_component(_mfaoa_blas_dir "${_mfaoa_blas_library}" DIRECTORY)
   set(_mfaoa_find_framework "${CMAKE_FIND_FRAMEWORK}")
@@ -84,7 +94,11 @@ else()
   endif()
   target_include_directories(mfaoa PRIVATE "${CBLAS_INCLUDE_DIR}")
 endif()
-message(STATUS "mfaoa links BLAS: ${BLAS_LIBRARIES}")
+if(MFAOA_BLAS)
+  message(STATUS "mfaoa links BLAS: ${BLAS_LIBRARIES}")
+else()
+  message(STATUS "mfaoa links no BLAS: dense couplings need the caller's dgemv")
+endif()
 
 # Installation: the library, the header, and the files with which other
 # builds find them: find_package(mfaoa) for CMake, mfaoa.pc for pkg-config.
@@ -93,10 +107,11 @@ install(TARGETS mfaoa EXPORT mfaoaTargets)
 install(FILES include/mfaoa.h DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 install(EXPORT mfaoaTargets NAMESPACE mfaoa:: DESTINATION ${MFAOA_CMAKE_DIR})
 
-if(BUILD_SHARED_LIBS)
-  set(MFAOA_STATIC_LIBRARY OFF)
+# Programs that link a static library with a BLAS must link the BLAS too.
+if(BUILD_SHARED_LIBS OR NOT MFAOA_BLAS)
+  set(MFAOA_NEEDS_BLAS OFF)
 else()
-  set(MFAOA_STATIC_LIBRARY ON)
+  set(MFAOA_NEEDS_BLAS ON)
 endif()
 configure_package_config_file(cmake/mfaoaConfig.cmake.in
   ${PROJECT_BINARY_DIR}/mfaoaConfig.cmake INSTALL_DESTINATION ${MFAOA_CMAKE_DIR})
@@ -119,7 +134,7 @@ else()
   set(MFAOA_PC_INCLUDEDIR "\${prefix}/${CMAKE_INSTALL_INCLUDEDIR}")
 endif()
 set(MFAOA_PC_CFLAGS "")
-if(MFAOA_STATIC_LIBRARY)
+if(NOT BUILD_SHARED_LIBS)
   set(MFAOA_PC_CFLAGS " -DMFAOA_STATIC")
 endif()
 # The BLAS as linker flags, for programs that link the static library.
@@ -150,11 +165,17 @@ if(MFAOA_BUILD_TESTS)
   if(UNIX AND NOT APPLE)
     target_link_libraries(mfaoa_check PRIVATE m)
   endif()
+  if(NOT MFAOA_BLAS)
+    target_compile_definitions(mfaoa_check PRIVATE CHECK_NO_BLAS)
+  endif()
   add_test(NAME reference_runs COMMAND mfaoa_check ${PROJECT_SOURCE_DIR}/test/golden.txt)
 
-  add_executable(mfaoa_example examples/solve.c)
-  target_link_libraries(mfaoa_example PRIVATE mfaoa)
-  add_test(NAME example COMMAND mfaoa_example)
-  set_tests_properties(example PROPERTIES
-    PASS_REGULAR_EXPRESSION "sigma = \\(-1, 1, 1, 1\\), E = -4\\.25")
+  # The example solves a dense problem with the library's own BLAS.
+  if(MFAOA_BLAS)
+    add_executable(mfaoa_example examples/solve.c)
+    target_link_libraries(mfaoa_example PRIVATE mfaoa)
+    add_test(NAME example COMMAND mfaoa_example)
+    set_tests_properties(example PROPERTIES
+      PASS_REGULAR_EXPRESSION "sigma = \\(-1, 1, 1, 1\\), E = -4\\.25")
+  endif()
 endif()

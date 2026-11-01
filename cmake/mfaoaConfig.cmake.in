@@ -3,8 +3,9 @@
 @PACKAGE_INIT@
 
 # A static libmfaoa leaves linking its BLAS to the program that uses it, so
-# that program needs the same BLAS. A shared one has it linked already.
-if(@MFAOA_STATIC_LIBRARY@)
+# that program needs the same BLAS. A shared one has it linked already, and
+# one built without BLAS needs none.
+if(@MFAOA_NEEDS_BLAS@)
   include(CMakeFindDependencyMacro)
   if(NOT DEFINED BLA_VENDOR AND NOT "@BLA_VENDOR@" STREQUAL "")
     set(BLA_VENDOR "@BLA_VENDOR@")

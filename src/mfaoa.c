@@ -4,9 +4,10 @@
  * A step costs one product of J with the vector of z components, and two
  * rotations per variable:
  *
- *   - the dense field m = h + J z is one dgemv, through the C interface
- *     (CBLAS) of whichever BLAS the library is linked to: Accelerate on
- *     macOS, OpenBLAS or BLIS elsewhere;
+ *   - the dense field m = h + J z is one dgemv: the caller's, if the
+ *     problem has one, or else through the C interface (CBLAS) of whichever
+ *     BLAS the library is linked to: Accelerate on macOS, OpenBLAS or BLIS
+ *     elsewhere;
  *   - the sparse field is a scatter over the columns of J, with a
  *     multiply-add that is fused where the hardware has it;
  *   - the rotations use no fused multiply-adds, so that GCC and Clang,
@@ -23,9 +24,12 @@
 #include <math.h>
 #include <string.h>
 
-/* The build defines MFAOA_ACCELERATE when it links Apple's Accelerate, whose
- * CBLAS has its own header; every other BLAS ships cblas.h. */
-#if defined(MFAOA_ACCELERATE)
+/* The build defines MFAOA_NO_BLAS when it links no BLAS, and
+ * MFAOA_ACCELERATE when it links Apple's Accelerate, whose CBLAS has its own
+ * header; every other BLAS ships cblas.h. */
+#if defined(MFAOA_NO_BLAS)
+   /* dense products only through the caller's dgemv */
+#elif defined(MFAOA_ACCELERATE)
 #  define ACCELERATE_NEW_LAPACK
 #  include <Accelerate/Accelerate.h>
 #else
@@ -105,6 +109,9 @@ static int arguments_valid(const mfaoa_problem *prob, const mfaoa_schedule *sche
 {
     if (prob->n < 1 || sched->p < 1) return 0;
     if (is_dense(prob) && prob->n > INT_MAX) return 0;   /* the size argument of a 32-bit BLAS */
+#if defined(MFAOA_NO_BLAS)
+    if (is_dense(prob) && prob->dgemv == NULL) return 0;
+#endif
     if (prob->sense != 1 && prob->sense != -1) return 0;
     if (!is_dense(prob) && (prob->colptr == NULL || prob->rowval == NULL || prob->nzval == NULL))
         return 0;
@@ -216,7 +223,17 @@ static void magnetization(const mfaoa_problem *prob, const double *z, double *m)
     const int64_t n = prob->n;
     memcpy(m, prob->h, (size_t)n * sizeof(double));
     if (is_dense(prob)) {
+        if (prob->dgemv != NULL) {
+            char trans = 'N';
+            int size = (int)n, one = 1;
+            double alpha = 1.0, beta = 1.0;
+            prob->dgemv(&trans, &size, &size, &alpha, (double *)prob->J, &size,
+                        (double *)z, &one, &beta, m, &one);
+            return;
+        }
+#if !defined(MFAOA_NO_BLAS)
         cblas_dgemv(CblasColMajor, CblasNoTrans, n, n, 1.0, prob->J, n, z, 1, 1.0, m, 1);
+#endif
         return;
     }
     for (int64_t j = 0; j < n; j++) {

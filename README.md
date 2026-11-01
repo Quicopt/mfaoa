@@ -55,6 +55,9 @@ cmake -S . -B build -DBLA_VENDOR=OpenBLAS -DCMAKE_PREFIX_PATH=$(brew --prefix op
 `-DBUILD_SHARED_LIBS=OFF` builds a static library. A program that links it
 must link the same BLAS as well; CMake and pkg-config add it.
 
+`-DMFAOA_BLAS=OFF` builds the library without a BLAS. A program must then
+pass a `dgemv` routine in every problem with dense couplings (see below).
+
 The library has been built and tested on macOS with Accelerate and with
 OpenBLAS. `mfaoa.h` declares the exports for a Windows DLL, but the build
 has not been tried on Windows.
@@ -86,7 +89,10 @@ A solve takes three structs, all declared in `mfaoa.h`:
 - `mfaoa_problem` holds $h$ and $J$, and whether to minimize or maximize.
   $J$ is either a dense matrix in column-major order, or a sparse one in
   compressed sparse columns (CSC) with 0-based indices. A sparse $J$ stores
-  both triangles, with the rows of each column in increasing order.
+  both triangles, with the rows of each column in increasing order. The
+  field `dgemv` can point to a BLAS `dgemv` of your own, in the Fortran
+  calling convention, for the product with a dense $J$. NULL, the default,
+  uses the BLAS the library is linked to.
 - `mfaoa_schedule` holds the angles $\beta_k$ and $\gamma_k$ of the $p$
   steps. `mfaoa_linear_schedule` fills them with the linear schedule of the
   paper. 1000 steps with $\tau = 0.5$ are a good start. More steps usually

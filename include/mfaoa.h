@@ -62,8 +62,18 @@ enum {
                                    variable of each group first */
     MFAOA_INVALID_ARGUMENT = 2  /* n < 1, p < 1, sense not ±1, missing couplings,
                                    J not symmetric or not zero on the diagonal,
-                                   or a nonpositive driver strength */
+                                   a nonpositive driver strength, or dense
+                                   couplings without dgemv in a library built
+                                   without BLAS */
 };
+
+/* A BLAS dgemv in the Fortran calling convention with 32-bit integers, as
+ * scipy.linalg.cython_blas provides it: y = alpha A x + beta y for
+ * trans = "N". mfaoa calls it with m = n = lda = n, incx = incy = 1,
+ * alpha = beta = 1, and does not expect it to change A or x. */
+typedef void (*mfaoa_dgemv_fn)(char *trans, int *m, int *n, double *alpha, double *a,
+                               int *lda, double *x, int *incx, double *beta, double *y,
+                               int *incy);
 
 /* The problem. Exactly one of the two coupling formats is used: the dense one
  * when J is not NULL, otherwise compressed sparse columns (CSC). */
@@ -78,6 +88,9 @@ typedef struct {
     double scale;            /* unit of the field in the rotation angle; <= 0 selects
                                 the root-mean-square field sqrt((Σh² + ΣJ²) / n) */
     int32_t sense;           /* +1: minimize E, -1: maximize E */
+    mfaoa_dgemv_fn dgemv;    /* the product J z for dense couplings, or NULL for the
+                                CBLAS the library is linked to. A library built
+                                without BLAS (MFAOA_BLAS=OFF) needs it for dense J */
 } mfaoa_problem;
 
 /* The schedule: p steps with driver angles β and problem angles γ. */
