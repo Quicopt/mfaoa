@@ -55,10 +55,14 @@ if(PROJECT_VERSION_MAJOR EQUAL 0)
 else()
   set(_mfaoa_soversion ${PROJECT_VERSION_MAJOR})
 endif()
-set_target_properties(mfaoa PROPERTIES
-  C_VISIBILITY_PRESET hidden
-  VERSION ${PROJECT_VERSION}
-  SOVERSION ${_mfaoa_soversion})
+set_target_properties(mfaoa PROPERTIES C_VISIBILITY_PRESET hidden)
+# The Python package loads the library by its plain name, and wheels cannot
+# hold the symbolic links between the versioned names.
+if(NOT SKBUILD)
+  set_target_properties(mfaoa PROPERTIES
+    VERSION ${PROJECT_VERSION}
+    SOVERSION ${_mfaoa_soversion})
+endif()
 # No fused multiply-adds beyond the ones src/mfaoa.c asks for, so that GCC
 # and Clang, whose defaults differ, compute the same results.
 if(CMAKE_C_COMPILER_ID MATCHES "Clang|GNU" AND NOT MSVC)
@@ -98,6 +102,13 @@ if(MFAOA_BLAS)
   message(STATUS "mfaoa links BLAS: ${BLAS_LIBRARIES}")
 else()
   message(STATUS "mfaoa links no BLAS: dense couplings need the caller's dgemv")
+endif()
+
+# Built for the Python package (by scikit-build-core, see pyproject.toml),
+# the library goes into the package folder and nothing else is installed.
+if(SKBUILD)
+  install(TARGETS mfaoa LIBRARY DESTINATION mfaoa RUNTIME DESTINATION mfaoa)
+  return()
 endif()
 
 # Installation: the library, the header, and the files with which other

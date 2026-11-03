@@ -1,0 +1,44 @@
+# The Python package: the C library, built without a BLAS, plus the Python
+# code in python/mfaoa, which passes SciPy's dgemv for dense couplings. The
+# library is not a Python extension module, so one wheel per platform serves
+# every Python 3 version.
+
+[build-system]
+requires = ["scikit-build-core>=0.11"]
+build-backend = "scikit_build_core.build"
+
+[project]
+name = "mfaoa"
+dynamic = ["version"]
+description = "Binary quadratic optimization with the mean-field approximate optimization algorithm"
+license = "Apache-2.0"
+license-files = ["LICENSE"]
+authors = [{ name = "Tim Bode" }]
+requires-python = ">=3.10"
+dependencies = ["numpy>=1.23", "scipy>=1.9"]
+
+[project.optional-dependencies]
+pyomo = ["pyomo>=6.9"]
+dimod = ["dimod>=0.12"]
+test = ["pytest"]
+
+[tool.scikit-build]
+minimum-version = "build-system.requires"
+cmake.version = ">=3.21"
+wheel.py-api = "py3"
+wheel.packages = ["python/mfaoa"]
+sdist.exclude = ["build", ".venv", "plan-*.md"]
+
+[tool.scikit-build.cmake.define]
+MFAOA_BLAS = "OFF"
+MFAOA_BUILD_TESTS = "OFF"
+BUILD_SHARED_LIBS = "ON"
+
+# The version is written once, in include/mfaoa.h.
+[tool.scikit-build.metadata.version]
+provider = "scikit_build_core.metadata.regex"
+input = "include/mfaoa.h"
+regex = '#define MFAOA_VERSION "(?P<value>[^"]+)"'
+
+[tool.pytest.ini_options]
+testpaths = ["python/tests"]
