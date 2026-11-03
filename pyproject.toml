@@ -16,7 +16,7 @@ license = "Apache-2.0"
 license-files = ["LICENSE"]
 authors = [{ name = "Tim Bode" }]
 maintainers = [{ name = "Quicopt" }]
-requires-python = ">=3.12"
+requires-python = ">=3.10"
 dependencies = ["numpy>=1.26", "scipy>=1.11.2"]
 keywords = ["optimization", "QUBO", "Ising", "binary quadratic programming", "max-cut", "Pyomo", "dimod"]
 classifiers = [
@@ -27,6 +27,12 @@ classifiers = [
     "Operating System :: POSIX :: Linux",
     "Programming Language :: C",
     "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Programming Language :: Python :: 3.15",
     "Topic :: Scientific/Engineering :: Mathematics",
 ]
 
@@ -68,7 +74,7 @@ testpaths = ["python/tests"]
 # and the newest. Five platforms: Linux x86_64 and aarch64 (manylinux), macOS
 # arm64 and x86_64, Windows x64.
 [tool.cibuildwheel]
-build = ["cp312-*", "cp315-*"]
+build = ["cp310-*", "cp315-*"]
 skip = ["*-musllinux_*"]
 archs = ["auto64"]
 test-extras = ["test"]

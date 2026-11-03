@@ -20,7 +20,7 @@ pip install "mfaoa[dimod]"    # with the dimod sampler
 pip install mfaoa             # NumPy and SciPy only
 ```
 
-The package needs Python 3.12 or later. PyPI has wheels for Linux, macOS and
+The package needs Python 3.10 or later. PyPI has wheels for Linux, macOS and
 Windows.
 
 ## Solving a Pyomo model
