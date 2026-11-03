@@ -11,6 +11,7 @@ build-backend = "scikit_build_core.build"
 name = "mfaoa"
 dynamic = ["version"]
 description = "Binary quadratic optimization with MFAOA, the mean-field approximate optimization algorithm"
+readme = "README.md"
 license = "Apache-2.0"
 license-files = ["LICENSE"]
 authors = [{ name = "Tim Bode" }]

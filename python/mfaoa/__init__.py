@@ -18,6 +18,11 @@ from ._symmetry import FlipSymmetricError
 
 __version__ = _version()
 
+# The public classes report the package as their module, so that messages
+# and tracebacks name them as users import them: mfaoa.FlipSymmetricError.
+for _cls in (IsingProblem, QUBOProblem, Schedule, Result, SpinState, FlipSymmetricError):
+    _cls.__module__ = "mfaoa"
+
 __all__ = [
     "FlipSymmetricError",
     "IsingProblem",
