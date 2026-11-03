@@ -26,11 +26,14 @@ def numpy_mfaoa(h, J, beta, gamma, *, sense=1, scale=None, delta=None):
 
 
 def random_ising(rng, n, density, sparse):
-    """A random h and a random symmetric J with zero diagonal, sparse or dense."""
-    A = sp.random_array((n, n), density=density, rng=rng, format="csc")
-    J = sp.triu(A, k=1)
-    J = (J + J.T).tocsc()
-    return rng.standard_normal(n), (J if sparse else J.toarray())
+    """A random h and a random symmetric J with zero diagonal, sparse or dense.
+
+    About a fraction `density` of the pairs i < j are coupled, with weights
+    uniform in [0, 1).
+    """
+    upper = np.triu(rng.random((n, n)) * (rng.random((n, n)) < density), k=1)
+    J = upper + upper.T
+    return rng.standard_normal(n), (sp.csc_array(J) if sparse else J)
 
 
 @pytest.mark.parametrize("sparse", [False, True])

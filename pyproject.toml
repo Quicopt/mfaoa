@@ -14,15 +14,31 @@ description = "Binary quadratic optimization with the mean-field approximate opt
 license = "Apache-2.0"
 license-files = ["LICENSE"]
 authors = [{ name = "Tim Bode" }]
-requires-python = ">=3.10"
-dependencies = ["numpy>=1.23", "scipy>=1.9"]
+requires-python = ">=3.12"
+dependencies = ["numpy>=1.26", "scipy>=1.11.2"]
+keywords = ["optimization", "QUBO", "Ising", "binary quadratic programming", "max-cut", "Pyomo", "dimod"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "Operating System :: MacOS",
+    "Operating System :: Microsoft :: Windows",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: C",
+    "Programming Language :: Python :: 3 :: Only",
+    "Topic :: Scientific/Engineering :: Mathematics",
+]
+
+[project.urls]
+Source = "https://github.com/Quicopt/mfaoa"
+Issues = "https://github.com/Quicopt/mfaoa/issues"
 
 [project.optional-dependencies]
 # Pyomo's solver interface (pyomo.contrib.solver) is still a preview; its
-# modules moved in 6.9.2 and again in 6.10.0.
-pyomo = ["pyomo>=6.10"]
-dimod = ["dimod>=0.12"]
-test = ["pytest", "pyomo>=6.10", "dimod>=0.12"]
+# modules moved in 6.9.2 and again in 6.10.0, and 6.10.1 added the
+# get_infeasible_results that mfaoa.pyomo uses.
+pyomo = ["pyomo>=6.10.1"]
+dimod = ["dimod>=0.12.14"]
+test = ["pytest", "pyomo>=6.10.1", "dimod>=0.12.14"]
 
 [tool.scikit-build]
 minimum-version = "build-system.requires"
@@ -44,3 +60,22 @@ regex = '#define MFAOA_VERSION "(?P<value>[^"]+)"'
 
 [tool.pytest.ini_options]
 testpaths = ["python/tests"]
+
+# Wheels: built once per platform with the oldest supported Python (the
+# wheel is py3-none and serves every Python 3), then tested with the oldest
+# and the newest. Five platforms: Linux x86_64 and aarch64 (manylinux), macOS
+# arm64 and x86_64, Windows x64.
+[tool.cibuildwheel]
+build = ["cp312-*", "cp315-*"]
+skip = ["*-musllinux_*"]
+archs = ["auto64"]
+test-extras = ["test"]
+test-command = "pytest {project}/python/tests"
+
+[tool.cibuildwheel.macos]
+# macOS 11 is the first with Apple Silicon; the library needs nothing newer.
+environment = { MACOSX_DEPLOYMENT_TARGET = "11.0" }
+
+[tool.cibuildwheel.windows]
+# The DLL depends on the C runtime only, so delvewheel has nothing to bundle.
+repair-wheel-command = ""
