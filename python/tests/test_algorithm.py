@@ -3,11 +3,10 @@ QUBO-to-Ising conversion against brute force."""
 
 import itertools
 
+import mfaoa
 import numpy as np
 import pytest
 import scipy.sparse as sp
-
-import mfaoa
 
 
 def numpy_mfaoa(h, J, beta, gamma, *, sense=1, scale=None, delta=None):
@@ -27,6 +26,7 @@ def numpy_mfaoa(h, J, beta, gamma, *, sense=1, scale=None, delta=None):
 
 
 def random_ising(rng, n, density, sparse):
+    """A random h and a random symmetric J with zero diagonal, sparse or dense."""
     A = sp.random_array((n, n), density=density, rng=rng, format="csc")
     J = sp.triu(A, k=1)
     J = (J + J.T).tocsc()
@@ -37,6 +37,7 @@ def random_ising(rng, n, density, sparse):
 @pytest.mark.parametrize("sense", ["min", "max"])
 @pytest.mark.parametrize("with_delta", [False, True])
 def test_solver_matches_numpy(sparse, sense, with_delta):
+    """The final vectors agree with the NumPy implementation of the algorithm."""
     rng = np.random.default_rng(1)
     n = 50
     h, J = random_ising(rng, n, 0.2, sparse)
@@ -53,6 +54,7 @@ def test_solver_matches_numpy(sparse, sense, with_delta):
 
 
 def test_objective_mf_is_the_objective_at_z():
+    """objective_mf is the objective at the final z components."""
     rng = np.random.default_rng(2)
     h, J = random_ising(rng, 30, 0.3, sparse=False)
     problem = mfaoa.IsingProblem(h, J, offset=2.5)
@@ -62,6 +64,7 @@ def test_objective_mf_is_the_objective_at_z():
 
 
 def test_dense_and_sparse_couplings_agree():
+    """The same couplings, stored dense and sparse, give the same run."""
     rng = np.random.default_rng(3)
     h, J = random_ising(rng, 40, 0.1, sparse=True)
     sparse = mfaoa.solve(mfaoa.IsingProblem(h, J))
@@ -71,6 +74,7 @@ def test_dense_and_sparse_couplings_agree():
 
 
 def test_fortran_ordered_couplings_give_the_same_result():
+    """A symmetric J may be stored in either memory order."""
     rng = np.random.default_rng(4)
     h, J = random_ising(rng, 20, 0.5, sparse=False)
     c = mfaoa.solve(mfaoa.IsingProblem(h, np.ascontiguousarray(J)), p=50)
@@ -79,11 +83,13 @@ def test_fortran_ordered_couplings_give_the_same_result():
 
 
 def all_assignments(n):
+    """Every vector of n zeros and ones, as the rows of an array."""
     return np.array(list(itertools.product([0, 1], repeat=n)), dtype=np.float64)
 
 
 @pytest.mark.parametrize("sparse", [False, True])
 def test_qubo_to_ising_preserves_every_objective_value(sparse):
+    """The Ising form has the QUBO's value at every one of the 2^n points."""
     rng = np.random.default_rng(5)
     n = 8
     Q = rng.standard_normal((n, n)) * (rng.random((n, n)) < 0.5)  # not symmetric, with a diagonal
@@ -96,6 +102,7 @@ def test_qubo_to_ising_preserves_every_objective_value(sparse):
 
 @pytest.mark.parametrize("sense", ["min", "max"])
 def test_small_qubo_solution_is_reported_consistently(sense):
+    """The reported objective is the QUBO's value at x, and close to the best."""
     rng = np.random.default_rng(6)
     n = 10
     Q = np.triu(rng.standard_normal((n, n)))

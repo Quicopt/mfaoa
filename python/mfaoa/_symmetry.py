@@ -19,6 +19,12 @@ class FlipSymmetricError(ValueError):
     """
 
     def __init__(self, message, groups):
+        """Keep the groups next to the message.
+
+        Args:
+            message: the explanation, naming the variables.
+            groups: the groups, in the variables of the problem that was solved.
+        """
         super().__init__(message)
         self.groups = groups
 

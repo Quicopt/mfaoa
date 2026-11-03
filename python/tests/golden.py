@@ -17,6 +17,7 @@ _INTEGERS = {"colptr", "rowval", "group", "sigma"}
 
 
 def read_cases(path=GOLDEN):
+    """The cases of the reference file, each as a dict of its fields and arrays."""
     tokens = path.read_text().split()
     cases, k = [], 0
     while k < len(tokens):

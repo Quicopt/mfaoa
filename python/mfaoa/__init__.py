@@ -19,12 +19,12 @@ from ._symmetry import FlipSymmetricError
 __version__ = _version()
 
 __all__ = [
+    "FlipSymmetricError",
     "IsingProblem",
     "QUBOProblem",
+    "Result",
     "Schedule",
+    "SpinState",
     "linear_schedule",
     "solve",
-    "Result",
-    "SpinState",
-    "FlipSymmetricError",
 ]

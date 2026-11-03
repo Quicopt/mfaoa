@@ -29,6 +29,7 @@ _ptr = ctypes.c_void_p
 
 
 class _Problem(ctypes.Structure):
+    """mfaoa_problem of mfaoa.h; pointers are passed as plain addresses."""
     _fields_ = [
         ("n", _int64),
         ("h", _ptr),
@@ -44,19 +45,31 @@ class _Problem(ctypes.Structure):
 
 
 class _Schedule(ctypes.Structure):
+    """mfaoa_schedule of mfaoa.h."""
     _fields_ = [("p", _int64), ("beta", _ptr), ("gamma", _ptr)]
 
 
 class _Workspace(ctypes.Structure):
+    """mfaoa_workspace of mfaoa.h."""
     _fields_ = [(name, _ptr) for name in ("x", "y", "z", "m", "sigma", "group")]
 
 
 def _library_path():
+    """The path of the C library inside the installed package, named as CMake names it on this platform."""
     names = {"win32": "mfaoa.dll", "darwin": "libmfaoa.dylib"}
     return Path(__file__).with_name(names.get(sys.platform, "libmfaoa.so"))
 
 
 def _load():
+    """Load the C library and declare its functions.
+
+    Returns:
+        The ctypes library.
+
+    Raises:
+        ImportError: the library's major and minor version differ from
+            HEADER_VERSION, so the structs above may not match it.
+    """
     lib = ctypes.CDLL(str(_library_path()))
     lib.mfaoa_solve.restype = ctypes.c_int32
     lib.mfaoa_solve.argtypes = [
@@ -120,6 +133,7 @@ def scipy_dgemv():
 
 
 def _address(a):
+    """The address of an array's data, or None (NULL) for None."""
     return None if a is None else a.ctypes.data
 
 

@@ -43,6 +43,7 @@ class Result:
     state: SpinState
 
     def __repr__(self):
+        """The number of variables and the objective value."""
         return f"Result: {self.sigma.shape[0]} variables, objective = {self.objective}"
 
 

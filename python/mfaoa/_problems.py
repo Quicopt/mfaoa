@@ -17,6 +17,7 @@ _SENSES = {"min": 1, "max": -1}
 
 
 def _check_sense(sense):
+    """Raise a ValueError unless sense is "min" or "max"."""
     if sense not in _SENSES:
         raise ValueError(f"sense must be 'min' or 'max', got {sense!r}")
 
@@ -37,6 +38,16 @@ def _matrix(A):
 
 
 def _vector(v, name, n=None):
+    """v as a contiguous float64 vector.
+
+    Args:
+        v: anything NumPy turns into a one-dimensional array.
+        name: the argument's name, for messages.
+        n: the length v must have, or None.
+
+    Raises:
+        ValueError: v is not one-dimensional, or its length is not n.
+    """
     v = np.ascontiguousarray(v, dtype=np.float64)
     if v.ndim != 1:
         raise ValueError(f"{name} must be a vector, got an array of shape {v.shape}")
@@ -71,6 +82,7 @@ def _check_couplings(J, n):
 
 
 def _sum_of_squares(A):
+    """The sum of the squared entries of a dense or sparse matrix."""
     values = A.data if sp.issparse(A) else A.ravel(order="K")
     return float(np.dot(values, values))
 
@@ -100,6 +112,12 @@ class IsingProblem:
     """
 
     def __init__(self, h, J, *, delta=None, offset=0.0, sense="min", scale=None):
+        """Check and store the problem; see the class docstring.
+
+        Raises:
+            ValueError: an argument that does not describe a problem in Ising
+                form, with a message that says which and why.
+        """
         _check_sense(sense)
         h = _vector(h, "h")
         n = h.shape[0]
@@ -195,6 +213,7 @@ class IsingProblem:
         )
 
     def __repr__(self):
+        """The size, storage and sense of the problem."""
         storage = "sparse" if sp.issparse(self.J) else "dense"
         return f"IsingProblem: {self.n} variables, {storage} couplings, sense = {self.sense!r}"
 
@@ -216,6 +235,12 @@ class QUBOProblem:
     """
 
     def __init__(self, Q, *, c=None, constant=0.0, sense="min"):
+        """Check and store the problem; see the class docstring.
+
+        Raises:
+            ValueError: Q is not square or empty, c has the wrong length, or
+                sense is not "min" or "max".
+        """
         _check_sense(sense)
         Q = _matrix(Q)
         if Q.ndim != 2 or Q.shape[0] != Q.shape[1]:
@@ -280,6 +305,7 @@ class QUBOProblem:
         return self.to_ising().is_flip_symmetric()
 
     def __repr__(self):
+        """The size, storage and sense of the problem."""
         storage = "sparse" if sp.issparse(self.Q) else "dense"
         return f"QUBOProblem: {self.n} variables, {storage} Q, sense = {self.sense!r}"
 
@@ -305,6 +331,11 @@ class Schedule:
     """
 
     def __init__(self, beta, gamma):
+        """Check and store the angles.
+
+        Raises:
+            ValueError: beta and gamma are not vectors of the same, nonzero length.
+        """
         beta = _vector(beta, "beta")
         gamma = _vector(gamma, "gamma")
         if beta.shape != gamma.shape:
@@ -317,9 +348,11 @@ class Schedule:
         self.gamma = gamma
 
     def __len__(self):
+        """The number of steps p."""
         return self.beta.shape[0]
 
     def __repr__(self):
+        """The number of steps."""
         return f"Schedule: {len(self)} steps"
 
 
@@ -341,3 +374,4 @@ def linear_schedule(p, tau=0.5):
     if p < 1:
         raise ValueError(f"need at least one step, got p = {p}")
     return Schedule(*_lib.linear_schedule(p, float(tau)))
+
