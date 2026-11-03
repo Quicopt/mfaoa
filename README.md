@@ -1,11 +1,16 @@
-<a href="https://quicopt.com">
+<p>
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/Quicopt/mfaoa/main/.github/images/quicopt-logo-dark.svg">
-    <img alt="Quicopt" src="https://raw.githubusercontent.com/Quicopt/mfaoa/main/.github/images/quicopt-logo.svg" width="240">
+    <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/Quicopt/mfaoa/main/.github/images/mfaoa-logo-dark.svg">
+    <img alt="mfaoa" src="https://raw.githubusercontent.com/Quicopt/mfaoa/main/.github/images/mfaoa-logo.svg" width="240" align="middle">
   </picture>
-</a>
-
-# mfaoa
+  &emsp;&emsp;
+  <a href="https://quicopt.com">
+    <picture>
+      <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/Quicopt/mfaoa/main/.github/images/quicopt-logo-dark.svg">
+      <img alt="Quicopt" src="https://raw.githubusercontent.com/Quicopt/mfaoa/main/.github/images/quicopt-logo.svg" width="200" align="middle">
+    </picture>
+  </a>
+</p>
 
 The `mfaoa` package solves binary quadratic problems without constraints. In
 such a problem, every variable is 0 or 1, and the objective is a quadratic
