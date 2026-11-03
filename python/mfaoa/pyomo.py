@@ -84,7 +84,7 @@ class MFAOAConfig(SolverConfig):
     """
 
     def __init__(self, description=None, doc=None, implicit=False, implicit_domain=None, visibility=0):
-        """Declare Pyomo's solver options and change the one default."""
+        """Declare Pyomo's solver options and set raise_exception_on_nonoptimal_result to False."""
         super().__init__(
             description=description,
             doc=doc,
@@ -102,7 +102,7 @@ class _Infeasible(Exception):
 
 
 class MFAOASolutionLoader(SolutionLoader):
-    """Hands the one solution of a solve to Pyomo: variable values, no duals."""
+    """The solution of a solve, for Pyomo: values of the variables, but no duals."""
 
     def __init__(self, model, values):
         """Keep the model and the solution.

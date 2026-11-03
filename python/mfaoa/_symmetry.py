@@ -79,8 +79,20 @@ def _set(name, indices, most=5):
 
 
 def flip_message(groups, n, name, words):
-    """Why a problem in n variables with these flip-symmetric groups cannot be
-    solved, and what to do about it. name(i) names variable i."""
+    """The error message for a problem in n variables with flip-symmetric groups.
+
+    The message names the groups, explains that the algorithm cannot move
+    their variables, and names one variable per group to fix.
+
+    Args:
+        groups: the groups, as from `flip_groups`.
+        n: the number of variables of the problem.
+        name: a function that returns the name of variable i, such as "x[3]".
+        words: the vocabulary of the problem's form, such as ISING_WORDS.
+
+    Returns:
+        The message, a string.
+    """
     firsts = [g[0] for g in groups]
     w = words
     if len(groups) == 1 and len(groups[0]) == n:
