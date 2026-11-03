@@ -37,6 +37,7 @@ classifiers = [
 ]
 
 [project.urls]
+Quicopt = "https://quicopt.com"
 Source = "https://github.com/Quicopt/mfaoa"
 Issues = "https://github.com/Quicopt/mfaoa/issues"
 

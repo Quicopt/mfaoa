@@ -1,3 +1,10 @@
+<a href="https://quicopt.com">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/Quicopt/mfaoa/main/.github/images/quicopt-logo-dark.svg">
+    <img alt="Quicopt" src="https://raw.githubusercontent.com/Quicopt/mfaoa/main/.github/images/quicopt-logo.svg" width="240">
+  </picture>
+</a>
+
 # mfaoa
 
 The `mfaoa` package solves binary quadratic problems without constraints. In
@@ -11,6 +18,8 @@ a good solution, without a proof that no better one exists. The package
 solves Pyomo models, binary quadratic models from D-Wave's dimod package,
 and problems given as NumPy arrays or SciPy sparse matrices. Its core is a
 small C library, which C programs can also use directly.
+
+[Quicopt](https://quicopt.com) develops and maintains `mfaoa`.
 
 ## Installation
 
@@ -55,7 +64,8 @@ The best choice is projects A, D and E. Their profit is 6 + 3 + 3, minus 1
 for the staff that D and E share.
 
 The model may contain binary variables and one objective, linear or
-quadratic, in either sense. Constraints are not allowed. To hold a variable
+quadratic, in either sense. Constraints are not allowed; the
+[Quicopt service](#quicopt) solves models with constraints. To hold a variable
 at 0 or 1, fix it, as in `model.choose["A"].fix(1)`, or give it bounds that
 allow only that value. Integer variables with bounds 0 and 1 count as
 binary. For any other model, `solve` raises Pyomo's `IncompatibleModelError`,
@@ -329,6 +339,16 @@ every solution into one with the same value.
 `MFAOA_VERSION` is the version of the header, and `mfaoa_version()` returns
 the version of the library that is loaded. While the major version is 0, a
 new minor version may change the structs and functions.
+
+## Quicopt
+
+The Quicopt optimization service solves the models that `mfaoa` cannot:
+models with constraints, and with integer or continuous variables. The
+[`quicopt`](https://pypi.org/project/quicopt/) package sends a model written
+with Pyomo, OR-Tools MathOpt or PuLP to the service and returns the answer.
+The free tier needs no account. The
+[documentation of `quicopt`](https://quicopt.github.io/quicopt-python/) has
+the details, and [quicopt.com](https://quicopt.com) has more about Quicopt.
 
 ## Reference
 
