@@ -58,4 +58,14 @@ jobs:
         with:
           path: dist
           merge-multiple: true
+      # The version comes from include/mfaoa.h; a release tagged v0.2.0
+      # must contain mfaoa-0.2.0.tar.gz, or nothing is uploaded.
+      - name: Check that the release tag matches the version
+        env:
+          TAG: ${{ github.event.release.tag_name }}
+        run: |
+          if [ ! -f "dist/mfaoa-${TAG#v}.tar.gz" ]; then
+            echo "::error::The release tag $TAG does not match the version of the package: $(ls dist/*.tar.gz)"
+            exit 1
+          fi
       - uses: pypa/gh-action-pypi-publish@v1.14.3
