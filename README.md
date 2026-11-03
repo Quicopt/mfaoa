@@ -10,19 +10,25 @@ array, including the one that receives the solution.
 
 mfaoa minimizes or maximizes
 
-$$E(\sigma) = \sum_i h_i \sigma_i + \sum_{i<j} J_{ij}\, \sigma_i \sigma_j
-\qquad \text{over } \sigma_i \in \{-1, +1\},$$
+```math
+E(\sigma) = \sum_i h_i \sigma_i + \sum_{i<j} J_{ij}\, \sigma_i \sigma_j
+\qquad \text{over } \sigma_i \in \{-1, +1\},
+```
 
 where $h$ is a vector and $J$ a symmetric matrix that is zero on the
-diagonal. A problem in variables $x_i \in \{0, 1\}$,
+diagonal. A problem in variables $`x_i \in \{0, 1\}`$,
 
-$$f(x) = \sum_i c_i x_i + \sum_{i<j} q_{ij}\, x_i x_j ,$$
+```math
+f(x) = \sum_i c_i x_i + \sum_{i<j} q_{ij}\, x_i x_j ,
+```
 
 takes this form with $x_i = (1 + \sigma_i)/2$:
 
-$$h_i = \frac{c_i}{2} + \frac{1}{4} \sum_{j \ne i} q_{ij}, \qquad
+```math
+h_i = \frac{c_i}{2} + \frac{1}{4} \sum_{j \ne i} q_{ij}, \qquad
 J_{ij} = J_{ji} = \frac{q_{ij}}{4}, \qquad
-f(x) = E(\sigma) + \sum_i \frac{c_i}{2} + \sum_{i<j} \frac{q_{ij}}{4}.$$
+f(x) = E(\sigma) + \sum_i \frac{c_i}{2} + \sum_{i<j} \frac{q_{ij}}{4}.
+```
 
 The algorithm runs a fixed number of steps $p$ and returns a good solution,
 without a proof that no better one exists.
