@@ -60,9 +60,12 @@ enum {
                                    and the solver would never move it. The
                                    workspace names the groups (see below); fix one
                                    variable of each group first */
-    MFAOA_INVALID_ARGUMENT = 2  /* n < 1, p < 1, sense not ±1, missing couplings,
-                                   J not symmetric or not zero on the diagonal,
-                                   a nonpositive driver strength, or dense
+    MFAOA_INVALID_ARGUMENT = 2  /* n < 1, p < 1, sense not ±1, a NULL pointer
+                                   for a required array, a number that is
+                                   infinite or NaN, J not symmetric or not
+                                   zero on the diagonal, CSC arrays that are
+                                   not well formed (see mfaoa_problem), a
+                                   nonpositive driver strength, or dense
                                    couplings without dgemv in a library built
                                    without BLAS */
 };
@@ -81,12 +84,13 @@ typedef struct {
     int64_t n;               /* number of variables */
     const double *h;         /* fields, length n */
     const double *J;         /* dense couplings, column-major n×n, or NULL */
-    const int64_t *colptr;   /* CSC: column j holds entries colptr[j] .. colptr[j+1]-1, */
-    const int64_t *rowval;   /*      rowval[k] is the row of entry k (0-based, increasing */
-    const double *nzval;     /*      within a column), nzval[k] its value; both triangles stored */
+    const int64_t *colptr;   /* CSC, length n+1: colptr[0] = 0, and column j holds */
+    const int64_t *rowval;   /*   the entries colptr[j] .. colptr[j+1]-1, with rows rowval[k] */
+    const double *nzval;     /*   (0-based, strictly increasing within a column) and values
+                                  nzval[k]; both triangles stored */
     const double *delta;     /* driver strengths Δ, length n, all > 0; NULL for Δᵢ = 1 */
-    double scale;            /* unit of the field in the rotation angle; <= 0 selects
-                                the root-mean-square field sqrt((Σh² + ΣJ²) / n) */
+    double scale;            /* unit of the field in the rotation angle, finite; <= 0
+                                selects the root-mean-square field sqrt((Σh² + ΣJ²) / n) */
     int32_t sense;           /* +1: minimize E, -1: maximize E */
     mfaoa_dgemv_fn dgemv;    /* the product J z for dense couplings, or NULL for the
                                 CBLAS the library is linked to. A library built
@@ -104,7 +108,8 @@ typedef struct {
  * MFAOA_OK, x, y, z hold the final vectors, m their field and sigma the
  * solution (±1). After MFAOA_FLIP_SYMMETRIC, group[i] is the smallest variable
  * (0-based) of the group of variable i, and sigma[i] == 1 exactly for the
- * smallest variable i of each group that must be fixed. */
+ * smallest variable i of each group that must be fixed; x, y, z and m are
+ * not written. After MFAOA_INVALID_ARGUMENT, nothing is written. */
 typedef struct {
     double *x, *y, *z;       /* length n each */
     double *m;               /* length n */
@@ -112,8 +117,8 @@ typedef struct {
     int64_t *group;          /* length n */
 } mfaoa_workspace;
 
-/* Run the algorithm. Returns one of the MFAOA_* codes; on anything but
- * MFAOA_OK the workspace content is unspecified. */
+/* Run the algorithm. Returns one of the MFAOA_* codes; mfaoa_workspace
+ * describes what the workspace holds after each. */
 MFAOA_API int32_t mfaoa_solve(const mfaoa_problem *prob, const mfaoa_schedule *sched,
                               mfaoa_workspace *ws);
 
