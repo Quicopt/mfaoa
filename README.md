@@ -12,6 +12,11 @@
   </a>
 </p>
 
+[![PyPI](https://img.shields.io/pypi/v/mfaoa.svg)](https://pypi.org/project/mfaoa/)
+[![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://pypi.org/project/mfaoa/)
+[![CI](https://github.com/Quicopt/mfaoa/actions/workflows/CI.yml/badge.svg?branch=main)](https://github.com/Quicopt/mfaoa/actions/workflows/CI.yml)
+[![License: Apache 2.0](https://img.shields.io/pypi/l/mfaoa.svg)](https://github.com/Quicopt/mfaoa/blob/main/LICENSE)
+
 The `mfaoa` package solves binary quadratic problems without constraints. In
 such a problem, every variable is 0 or 1, and the objective is a quadratic
 function of the variables, to be minimized or maximized. Max-Cut, QUBO models
