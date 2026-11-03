@@ -7,7 +7,7 @@
   <a href="https://quicopt.com">
     <picture>
       <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/Quicopt/mfaoa/main/.github/images/quicopt-logo-dark.svg">
-      <img alt="Quicopt" src="https://raw.githubusercontent.com/Quicopt/mfaoa/main/.github/images/quicopt-logo.svg" width="200" align="middle">
+      <img alt="Quicopt" src="https://raw.githubusercontent.com/Quicopt/mfaoa/main/.github/images/quicopt-logo.svg" width="300" align="middle">
     </picture>
   </a>
 </p>
