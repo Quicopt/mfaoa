@@ -67,10 +67,18 @@ def _load():
         The ctypes library.
 
     Raises:
-        ImportError: the library's major and minor version differ from
-            HEADER_VERSION, so the structs above may not match it.
+        ImportError: the library is missing, as it is when the package is
+            imported from its source folder, or its major and minor version
+            differ from HEADER_VERSION, so the structs above may not match it.
     """
-    lib = ctypes.CDLL(str(_library_path()))
+    path = _library_path()
+    if not path.exists():
+        raise ImportError(
+            f"The C library of mfaoa is missing: {path} does not exist. The library is built "
+            "when the package is installed, so mfaoa cannot be imported from its source folder. "
+            "Install it with pip install mfaoa, or with pip install . in the source folder."
+        )
+    lib = ctypes.CDLL(str(path))
     lib.mfaoa_solve.restype = ctypes.c_int32
     lib.mfaoa_solve.argtypes = [
         ctypes.POINTER(_Problem),

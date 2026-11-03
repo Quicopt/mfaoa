@@ -72,6 +72,22 @@ def test_objective_includes_offset_and_counts_each_pair_once():
         (lambda: mfaoa.Schedule([0.1, 0.2], [0.1]), "one entry per step; got 2 and 1"),
         (lambda: mfaoa.Schedule([], []), "at least one step"),
         (lambda: mfaoa.linear_schedule(0), "need at least one step, got p = 0"),
+        (lambda: mfaoa.linear_schedule(10, tau=0.0), "tau must be positive and finite, got 0.0"),
+        (lambda: mfaoa.linear_schedule(10, tau=np.inf), "tau must be positive and finite, got inf"),
+        # infinite and NaN numbers, named by their position
+        (lambda: mfaoa.IsingProblem([np.nan, 0.0], J2), r"h must be finite, but h\[0\] = nan"),
+        (lambda: mfaoa.IsingProblem([0.0, 0.0], [[0.0, np.inf], [np.inf, 0.0]]),
+         r"J must be finite, but J\[0, 1\] = inf"),
+        (lambda: mfaoa.IsingProblem([0.0, 0.0], sp.csc_array([[0.0, -np.inf], [-np.inf, 0.0]])),
+         r"J must be finite, but J\[1, 0\] = -inf"),
+        (lambda: mfaoa.IsingProblem([0.0, 0.0], [[0.0, np.nan], [np.nan, 0.0]]), "J must be finite"),
+        (lambda: mfaoa.IsingProblem([0.0, 0.0], J2, delta=[1.0, np.inf]), r"delta must be finite"),
+        (lambda: mfaoa.IsingProblem([0.0, 0.0], J2, offset=np.nan), "offset must be finite, got nan"),
+        (lambda: mfaoa.IsingProblem([0.0, 0.0], J2, scale=np.inf), "scale must be positive and finite"),
+        (lambda: mfaoa.QUBOProblem([[0.0, np.nan], [0.0, 0.0]]), r"Q must be finite, but Q\[0, 1\] = nan"),
+        (lambda: mfaoa.QUBOProblem(J2, c=[np.nan, 1.0]), r"c must be finite, but c\[0\] = nan"),
+        (lambda: mfaoa.QUBOProblem(J2, constant=np.inf), "constant must be finite, got inf"),
+        (lambda: mfaoa.Schedule([0.1, np.nan], [0.1, 0.2]), r"beta must be finite, but beta\[1\] = nan"),
     ],
 )
 def test_invalid_input_is_rejected_with_a_message(build, message):
@@ -87,8 +103,37 @@ def test_solve_rejects_wrong_arguments():
         mfaoa.solve(problem, mfaoa.linear_schedule(10), p=10)
     with pytest.raises(TypeError, match="IsingProblem or a QUBOProblem"):
         mfaoa.solve(J2)
-    with pytest.raises(TypeError):
+    with pytest.raises(TypeError, match="p, the number of steps, must be an integer, got 10.5"):
         mfaoa.linear_schedule(10.5)
+    with pytest.raises(TypeError, match="must be an integer, got 200.0"):
+        mfaoa.solve(problem, p=200.0)
+
+
+def test_sparse_values_in_a_strided_view_are_read_correctly():
+    """A sparse J whose values are every second entry of another array gives the run of the dense J."""
+    values = np.array([1.0, 99.0, 1.0, 99.0])  # only the entries 0 and 2 belong to J
+    J = sp.csc_array((values[::2], np.array([1, 0]), np.array([0, 1, 2])), shape=(2, 2))
+    assert not J.data.flags.c_contiguous
+    sparse = mfaoa.solve(mfaoa.IsingProblem([0.5, 0.0], J), p=50)
+    dense = mfaoa.solve(mfaoa.IsingProblem([0.5, 0.0], J2), p=50)
+    np.testing.assert_allclose(sparse.state.z, dense.state.z, rtol=0, atol=1e-12)
+
+
+def test_results_can_be_compared():
+    """Comparing two results does not raise: results compare by identity."""
+    problem = mfaoa.IsingProblem([0.5, 0.0], J2)
+    result = mfaoa.solve(problem, p=10)
+    assert result == result
+    assert result != mfaoa.solve(problem, p=10)
+
+
+def test_a_missing_library_is_explained(monkeypatch, tmp_path):
+    """Without the C library, as in the source folder, the ImportError says how to install."""
+    from mfaoa import _lib
+
+    monkeypatch.setattr(_lib, "_library_path", lambda: tmp_path / "libmfaoa.so")
+    with pytest.raises(ImportError, match=r"C library of mfaoa is missing.*pip install \. in the source folder"):
+        _lib._load()
 
 
 def test_p_and_tau_select_the_linear_schedule():

@@ -18,7 +18,9 @@ class SpinState(NamedTuple):
     z: np.ndarray
 
 
-@dataclass(frozen=True)
+# eq=False: a comparison field by field would compare NumPy arrays, whose
+# == gives an array, and raise. Results compare by identity instead.
+@dataclass(frozen=True, eq=False)
 class Result:
     """The result of `solve`.
 

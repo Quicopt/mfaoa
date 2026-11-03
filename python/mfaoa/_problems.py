@@ -6,6 +6,7 @@ compressed sparse columns (CSC), the format of the C library; its index
 arrays are copied once, to the 64-bit integers the library takes.
 """
 
+import math
 import operator
 
 import numpy as np
@@ -24,12 +25,16 @@ def _check_sense(sense):
 
 def _matrix(A):
     """A as a float64 matrix: a SciPy sparse array in canonical CSC form
-    (sorted indices, no duplicates), or a contiguous NumPy array."""
+    (sorted indices, no duplicates) with contiguous values, or a contiguous
+    NumPy array."""
     if sp.issparse(A):
         A = sp.csc_array(A, dtype=np.float64)
         if not A.has_canonical_format:
             A = A.copy()
             A.sum_duplicates()
+        # The values may be a view with a stride, as the C library cannot read.
+        if not A.data.flags.c_contiguous:
+            A.data = np.ascontiguousarray(A.data)
         return A
     A = np.asarray(A, dtype=np.float64)
     if not (A.flags.c_contiguous or A.flags.f_contiguous):
@@ -46,20 +51,52 @@ def _vector(v, name, n=None):
         n: the length v must have, or None.
 
     Raises:
-        ValueError: v is not one-dimensional, or its length is not n.
+        ValueError: v is not one-dimensional, its length is not n, or an
+            entry is infinite or NaN.
     """
     v = np.ascontiguousarray(v, dtype=np.float64)
     if v.ndim != 1:
         raise ValueError(f"{name} must be a vector, got an array of shape {v.shape}")
     if n is not None and v.shape[0] != n:
         raise ValueError(f"{name} must have one entry per variable, got {v.shape[0]} for n = {n}")
+    bad = np.flatnonzero(~np.isfinite(v))
+    if bad.size:
+        i = int(bad[0])
+        raise ValueError(f"{name} must be finite, but {name}[{i}] = {float(v[i])}")
     return v
 
 
+def _number(value, name):
+    """value as a float; raises a ValueError if it is infinite or NaN."""
+    value = float(value)
+    if not math.isfinite(value):
+        raise ValueError(f"{name} must be finite, got {value}")
+    return value
+
+
+def _check_finite(A, name):
+    """Raise a ValueError if the matrix A, dense or sparse, has an entry that is infinite or NaN."""
+    if sp.issparse(A):
+        A = A.tocoo()
+        bad = np.flatnonzero(~np.isfinite(A.data))
+        if not bad.size:
+            return
+        k = bad[0]
+        i, j, value = int(A.row[k]), int(A.col[k]), A.data[k]
+    else:
+        bad = np.argwhere(~np.isfinite(A))
+        if not len(bad):
+            return
+        i, j = (int(k) for k in bad[0])
+        value = A[i, j]
+    raise ValueError(f"{name} must be finite, but {name}[{i}, {j}] = {float(value)}")
+
+
 def _check_couplings(J, n):
-    """Raise a ValueError unless J is n × n, symmetric and zero on the diagonal."""
+    """Raise a ValueError unless J is n × n, finite, symmetric and zero on the diagonal."""
     if J.shape != (n, n):
         raise ValueError(f"J must be {n}×{n} to match h, got {J.shape}")
+    _check_finite(J, "J")
     diagonal = J.diagonal()
     nonzero = np.flatnonzero(diagonal)
     if nonzero.size:
@@ -132,13 +169,13 @@ class IsingProblem:
         if scale is None:
             s = np.sqrt((float(np.dot(h, h)) + _sum_of_squares(J)) / n)
             scale = 1.0 if s == 0 else float(s)  # 1 for an all-zero objective
-        elif not scale > 0:
-            raise ValueError(f"scale must be positive, got {scale}")
+        elif not (scale > 0 and math.isfinite(scale)):
+            raise ValueError(f"scale must be positive and finite, got {scale}")
         self.n = n
         self.h = h
         self.J = J
         self.delta = delta
-        self.offset = float(offset)
+        self.offset = _number(offset, "offset")
         self.sense = sense
         self._scale = float(scale)
         if sp.issparse(J):
@@ -238,8 +275,8 @@ class QUBOProblem:
         """Check and store the problem; see the class docstring.
 
         Raises:
-            ValueError: Q is not square or empty, c has the wrong length, or
-                sense is not "min" or "max".
+            ValueError: Q is not square or empty, c has the wrong length, a
+                number is infinite or NaN, or sense is not "min" or "max".
         """
         _check_sense(sense)
         Q = _matrix(Q)
@@ -248,10 +285,11 @@ class QUBOProblem:
         n = Q.shape[0]
         if n < 1:
             raise ValueError("the problem needs at least one variable")
+        _check_finite(Q, "Q")
         self.n = n
         self.Q = Q
         self.c = np.zeros(n) if c is None else _vector(c, "c", n)
-        self.constant = float(constant)
+        self.constant = _number(constant, "constant")
         self.sense = sense
 
     def objective(self, x):
@@ -334,7 +372,8 @@ class Schedule:
         """Check and store the angles.
 
         Raises:
-            ValueError: beta and gamma are not vectors of the same, nonzero length.
+            ValueError: beta and gamma are not vectors of the same, nonzero
+                length, or an angle is infinite or NaN.
         """
         beta = _vector(beta, "beta")
         gamma = _vector(gamma, "gamma")
@@ -369,11 +408,21 @@ def linear_schedule(p, tau=0.5):
     more steps, the angles change more slowly from one step to the next.
     That usually gives a better solution, and the time of a solve grows in
     proportion to p.
+
+    Raises:
+        TypeError: p is not an integer.
+        ValueError: p is less than 1, or tau is not positive and finite.
     """
-    p = operator.index(p)
+    try:
+        p = operator.index(p)
+    except TypeError:
+        raise TypeError(f"p, the number of steps, must be an integer, got {p!r}") from None
     if p < 1:
         raise ValueError(f"need at least one step, got p = {p}")
-    return Schedule(*_lib.linear_schedule(p, float(tau)))
+    tau = float(tau)
+    if not (tau > 0 and math.isfinite(tau)):
+        raise ValueError(f"tau must be positive and finite, got {tau}")
+    return Schedule(*_lib.linear_schedule(p, tau))
 
 
 # The sparse product beats a dense one below about 25-30 % fill, measured for
@@ -416,13 +465,11 @@ def schedule_from(p=None, tau=None, beta=None, gamma=None):
         linear schedule with p and tau.
 
     Raises:
-        ValueError: only one of beta and gamma, or a tau that is not positive.
+        TypeError, ValueError: only one of beta and gamma, or values that
+            `Schedule` or `linear_schedule` reject.
     """
     if (beta is None) != (gamma is None):
         raise ValueError("Set both beta and gamma for a schedule of your own, or neither.")
     if beta is not None:
         return Schedule(beta, gamma)
-    tau = 0.5 if tau is None else tau
-    if not tau > 0:
-        raise ValueError(f"tau must be positive, got {tau}")
-    return linear_schedule(1000 if p is None else p, tau)
+    return linear_schedule(1000 if p is None else p, 0.5 if tau is None else tau)

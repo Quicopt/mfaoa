@@ -296,7 +296,8 @@ def _schedule(options):
         A `mfaoa.Schedule`; see `mfaoa._problems.schedule_from`.
 
     Raises:
-        ValueError: an unknown option, or options that `schedule_from` rejects.
+        ValueError: an unknown option.
+        TypeError, ValueError: options that `schedule_from` rejects.
     """
     unknown = sorted(set(options) - set(_OPTIONS))
     if unknown:
