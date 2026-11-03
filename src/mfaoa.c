@@ -1,12 +1,13 @@
 /*
- * mfaoa.c — the mean-field AOA, declared in include/mfaoa.h.
+ * mfaoa.c — the MFAOA solver, declared in include/mfaoa.h.
  *
  * A step costs one product of J with the vector of z components, and two
  * rotations per variable:
  *
- *   - the dense field m = h + J z is one dgemv, through the C interface
- *     (CBLAS) of whichever BLAS the library is linked to: Accelerate on
- *     macOS, OpenBLAS or BLIS elsewhere;
+ *   - the dense field m = h + J z is one dgemv: the caller's, if the
+ *     problem has one, or else through the C interface (CBLAS) of whichever
+ *     BLAS the library is linked to: Accelerate on macOS, OpenBLAS or BLIS
+ *     elsewhere;
  *   - the sparse field is a scatter over the columns of J, with a
  *     multiply-add that is fused where the hardware has it;
  *   - the rotations use no fused multiply-adds, so that GCC and Clang,
@@ -23,9 +24,12 @@
 #include <math.h>
 #include <string.h>
 
-/* The build defines MFAOA_ACCELERATE when it links Apple's Accelerate, whose
- * CBLAS has its own header; every other BLAS ships cblas.h. */
-#if defined(MFAOA_ACCELERATE)
+/* The build defines MFAOA_NO_BLAS when it links no BLAS, and
+ * MFAOA_ACCELERATE when it links Apple's Accelerate, whose CBLAS has its own
+ * header; every other BLAS ships cblas.h. */
+#if defined(MFAOA_NO_BLAS)
+   /* dense products only through the caller's dgemv */
+#elif defined(MFAOA_ACCELERATE)
 #  define ACCELERATE_NEW_LAPACK
 #  include <Accelerate/Accelerate.h>
 #else
@@ -78,7 +82,34 @@ static double csc_entry(const mfaoa_problem *prob, int64_t i, int64_t j)
     return 0.0;
 }
 
-/* 1 if J is symmetric with a zero diagonal. */
+/* 1 if every one of the len values is finite. */
+static int all_finite(const double *v, int64_t len)
+{
+    for (int64_t k = 0; k < len; k++)
+        if (!isfinite(v[k])) return 0;
+    return 1;
+}
+
+/* 1 if the CSC arrays are well formed: column pointers that start at 0 and
+ * never decrease, and in each column rows within 0 .. n-1 in strictly
+ * increasing order, so that no entry is stored twice. */
+static int csc_valid(const mfaoa_problem *prob)
+{
+    const int64_t n = prob->n;
+    if (prob->colptr[0] != 0) return 0;
+    for (int64_t j = 0; j < n; j++)
+        if (prob->colptr[j + 1] < prob->colptr[j]) return 0;
+    for (int64_t j = 0; j < n; j++)
+        for (int64_t k = prob->colptr[j]; k < prob->colptr[j + 1]; k++) {
+            const int64_t i = prob->rowval[k];
+            if (i < 0 || i >= n) return 0;
+            if (k > prob->colptr[j] && i <= prob->rowval[k - 1]) return 0;
+        }
+    return 1;
+}
+
+/* 1 if J is finite, symmetric and zero on the diagonal, and, in CSC, well
+ * formed. */
 static int couplings_valid(const mfaoa_problem *prob)
 {
     const int64_t n = prob->n;
@@ -87,30 +118,42 @@ static int couplings_valid(const mfaoa_problem *prob)
         for (int64_t j = 0; j < n; j++) {
             if (J[j + j * n] != 0.0) return 0;
             for (int64_t i = 0; i < j; i++)
-                if (J[i + j * n] != J[j + i * n]) return 0;
+                if (!isfinite(J[i + j * n]) || J[i + j * n] != J[j + i * n]) return 0;
         }
         return 1;
     }
+    if (!csc_valid(prob) || !all_finite(prob->nzval, prob->colptr[n])) return 0;
     for (int64_t j = 0; j < n; j++)
         for (int64_t k = prob->colptr[j]; k < prob->colptr[j + 1]; k++) {
-            int64_t i = prob->rowval[k];
-            if (i < 0 || i >= n) return 0;
+            const int64_t i = prob->rowval[k];
             if (i == j ? prob->nzval[k] != 0.0 : csc_entry(prob, j, i) != prob->nzval[k]) return 0;
         }
     return 1;
 }
 
-/* 1 if the arguments describe a problem and schedule the solver accepts. */
-static int arguments_valid(const mfaoa_problem *prob, const mfaoa_schedule *sched)
+/* 1 if the arguments describe a problem, schedule and workspace that the
+ * solver accepts. */
+static int arguments_valid(const mfaoa_problem *prob, const mfaoa_schedule *sched,
+                           const mfaoa_workspace *ws)
 {
+    if (prob == NULL || sched == NULL || ws == NULL) return 0;
+    if (prob->h == NULL || sched->beta == NULL || sched->gamma == NULL) return 0;
+    if (ws->x == NULL || ws->y == NULL || ws->z == NULL || ws->m == NULL || ws->sigma == NULL
+        || ws->group == NULL)
+        return 0;
     if (prob->n < 1 || sched->p < 1) return 0;
     if (is_dense(prob) && prob->n > INT_MAX) return 0;   /* the size argument of a 32-bit BLAS */
+#if defined(MFAOA_NO_BLAS)
+    if (is_dense(prob) && prob->dgemv == NULL) return 0;
+#endif
     if (prob->sense != 1 && prob->sense != -1) return 0;
     if (!is_dense(prob) && (prob->colptr == NULL || prob->rowval == NULL || prob->nzval == NULL))
         return 0;
+    if (!isfinite(prob->scale) || !all_finite(prob->h, prob->n)) return 0;
+    if (!all_finite(sched->beta, sched->p) || !all_finite(sched->gamma, sched->p)) return 0;
     if (prob->delta != NULL)
         for (int64_t i = 0; i < prob->n; i++)
-            if (!(prob->delta[i] > 0.0)) return 0;
+            if (!(prob->delta[i] > 0.0) || isinf(prob->delta[i])) return 0;
     return couplings_valid(prob);
 }
 
@@ -216,7 +259,17 @@ static void magnetization(const mfaoa_problem *prob, const double *z, double *m)
     const int64_t n = prob->n;
     memcpy(m, prob->h, (size_t)n * sizeof(double));
     if (is_dense(prob)) {
+        if (prob->dgemv != NULL) {
+            char trans = 'N';
+            int size = (int)n, one = 1;
+            double alpha = 1.0, beta = 1.0;
+            prob->dgemv(&trans, &size, &size, &alpha, (double *)prob->J, &size,
+                        (double *)z, &one, &beta, m, &one);
+            return;
+        }
+#if !defined(MFAOA_NO_BLAS)
         cblas_dgemv(CblasColMajor, CblasNoTrans, n, n, 1.0, prob->J, n, z, 1, 1.0, m, 1);
+#endif
         return;
     }
     for (int64_t j = 0; j < n; j++) {
@@ -257,7 +310,7 @@ static void readout(const mfaoa_problem *prob, mfaoa_workspace *ws)
 MFAOA_API int32_t mfaoa_solve(const mfaoa_problem *prob, const mfaoa_schedule *sched,
                               mfaoa_workspace *ws)
 {
-    if (!arguments_valid(prob, sched)) return MFAOA_INVALID_ARGUMENT;
+    if (!arguments_valid(prob, sched, ws)) return MFAOA_INVALID_ARGUMENT;
     if (stuck_groups(prob, ws) > 0) return MFAOA_FLIP_SYMMETRIC;
     const int64_t n = prob->n;
     for (int64_t i = 0; i < n; i++) {

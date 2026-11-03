@@ -1,0 +1,76 @@
+# Tests on every push and pull request: the C library with each platform's
+# BLAS, and the Python package with the oldest and the newest dependencies.
+name: CI
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+permissions:
+  contents: read
+
+jobs:
+  c-library:
+    name: C library, ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest   # OpenBLAS
+            cmake-args: ""
+          - os: macos-latest    # Accelerate
+            cmake-args: ""
+          - os: windows-latest  # no BLAS: dense couplings through the caller's dgemv
+            cmake-args: "-DMFAOA_BLAS=OFF"
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - name: Install OpenBLAS
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y libopenblas-dev
+      - run: cmake -S . -B build ${{ matrix.cmake-args }}
+      - run: cmake --build build --config Release
+      - run: ctest --test-dir build --build-config Release --output-on-failure
+
+  python:
+    name: Python ${{ matrix.python }}, ${{ matrix.os }}, ${{ matrix.deps }} dependencies
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        python: ["3.10", "3.15"]
+        deps: [newest]
+        include:
+          # The oldest versions that pyproject.toml allows, on the oldest Python.
+          - os: ubuntu-latest
+            python: "3.10"
+            deps: oldest
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-python@v7.1.0
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Pin the oldest dependencies
+        if: matrix.deps == 'oldest'
+        run: pip install numpy==1.26.0 scipy==1.11.2 pyomo==6.10.1 dimod==0.12.14
+      - run: pip install ".[test]"
+      - run: pytest
+
+  pyomo-main:
+    # Pyomo's solver interface is a preview and still moves; this job shows
+    # early when its main branch breaks mfaoa.pyomo. It may fail without
+    # failing the run.
+    name: Pyomo's main branch
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-python@v7.1.0
+        with:
+          python-version: "3.14"
+      - run: pip install ".[test]" "pyomo @ git+https://github.com/Pyomo/pyomo@main"
+      - run: pytest python/tests/test_pyomo.py
