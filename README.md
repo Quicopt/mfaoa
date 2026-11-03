@@ -153,7 +153,7 @@ Without a modelling package, a problem is a few arrays. In QUBO form, with
 variables `x[i]` that are 0 or 1, the objective is
 
 ```math
-f(x) = x^\top Q\, x + c^\top x + \text{constant}.
+f(x) = x^T Q x + c^T x + \text{constant}
 ```
 
 `Q` is used exactly as given: a symmetric matrix counts each pair of
@@ -178,11 +178,11 @@ print(result.x, result.objective)
 In Ising form, the variables `σ[i]` are -1 or +1, and the objective is
 
 ```math
-E(\sigma) = \sum_i h_i \sigma_i + \sum_{i<j} J_{ij}\, \sigma_i \sigma_j + \text{offset},
+E(\sigma) = \sum_i h_i \sigma_i + \sum_{i \lt j} J_{ij} \sigma_i \sigma_j + \text{offset}
 ```
 
-which `mfaoa.IsingProblem(h, J, offset=0.0, sense="min")` states. `J` must
-be symmetric and zero on the diagonal. A `QUBOProblem` is converted to this
+A problem in this form is `mfaoa.IsingProblem(h, J, offset=0.0, sense="min")`.
+`J` must be symmetric and zero on the diagonal. A `QUBOProblem` is converted to this
 form before the solve.
 
 `Q` and `J` can be NumPy arrays or SciPy sparse matrices. Each step of the
@@ -213,23 +213,29 @@ the solution.
 The library minimizes or maximizes
 
 ```math
-E(\sigma) = \sum_i h_i \sigma_i + \sum_{i<j} J_{ij}\, \sigma_i \sigma_j
-\qquad \text{over } \sigma_i \in \{-1, +1\},
+E(\sigma) = \sum_i h_i \sigma_i + \sum_{i \lt j} J_{ij} \sigma_i \sigma_j
 ```
 
-where $h$ is a vector and $J$ a symmetric matrix that is zero on the
-diagonal. A problem in variables $`x_i \in \{0, 1\}`$,
+over variables $\sigma_i$ that are -1 or +1, where $h$ is a vector and $J$ a
+symmetric matrix that is zero on the diagonal. A problem in variables $x_i$
+that are 0 or 1,
 
 ```math
-f(x) = \sum_i c_i x_i + \sum_{i<j} q_{ij}\, x_i x_j ,
+f(x) = \sum_i c_i x_i + \sum_{i \lt j} q_{ij} x_i x_j
 ```
 
-takes this form with $x_i = (1 + \sigma_i)/2$:
+takes this form with $x_i = (1 + \sigma_i)/2$ and
 
 ```math
-h_i = \frac{c_i}{2} + \frac{1}{4} \sum_{j \ne i} q_{ij}, \qquad
-J_{ij} = J_{ji} = \frac{q_{ij}}{4}, \qquad
-f(x) = E(\sigma) + \sum_i \frac{c_i}{2} + \sum_{i<j} \frac{q_{ij}}{4}.
+h_i = \frac{c_i}{2} + \frac{1}{4} \sum_{j \ne i} q_{ij}
+```
+
+```math
+J_{ij} = J_{ji} = \frac{q_{ij}}{4}
+```
+
+```math
+f(x) = E(\sigma) + \sum_i \frac{c_i}{2} + \sum_{i \lt j} \frac{q_{ij}}{4}
 ```
 
 ### Building
