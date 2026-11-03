@@ -84,8 +84,8 @@ def _load():
     loaded = lib.mfaoa_version().decode()
     if loaded.split(".")[:2] != HEADER_VERSION.split(".")[:2]:
         raise ImportError(
-            f"mfaoa loaded the C library version {loaded} from {_library_path()}, "
-            f"but its Python code was written for version {HEADER_VERSION}. "
+            f"The Python package mfaoa {HEADER_VERSION} loaded its C library from {_library_path()}, "
+            f"but that library has version {loaded}. "
             "Reinstall the package: pip install --force-reinstall mfaoa"
         )
     return lib
@@ -125,7 +125,7 @@ def scipy_dgemv():
     signature = re.sub(r"__pyx_t_\w+_d\b", "double", name.decode())
     if signature != _DGEMV_SIGNATURE:
         raise RuntimeError(
-            "mfaoa needs SciPy's BLAS with 32-bit integers for dense couplings, "
+            "Dense couplings need SciPy's BLAS with 32-bit integers, "
             f"but this SciPy's dgemv has the signature {signature}. "
             "Pass J as a scipy.sparse matrix, or install SciPy from PyPI."
         )

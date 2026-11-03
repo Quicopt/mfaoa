@@ -1,14 +1,14 @@
 # mfaoa
 
-mfaoa solves binary quadratic problems without constraints with the
-mean-field approximate optimization algorithm (mean-field AOA) of
+The `mfaoa` library solves binary quadratic problems without constraints
+with the mean-field approximate optimization algorithm (MFAOA) of
 Misra-Spieldenner et al. (2023). It is a C library with one function that
 solves a problem. The library allocates no memory: the caller passes every
 array, including the one that receives the solution.
 
 ## The problem
 
-mfaoa minimizes or maximizes
+The library minimizes or maximizes
 
 ```math
 E(\sigma) = \sum_i h_i \sigma_i + \sum_{i<j} J_{ij}\, \sigma_i \sigma_j

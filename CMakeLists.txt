@@ -1,4 +1,4 @@
-# libmfaoa, the mean-field AOA solver in C, built against the system's BLAS.
+# libmfaoa, the MFAOA solver in C, built against the system's BLAS.
 #
 #   cmake -S . -B build && cmake --build build && ctest --test-dir build
 #   cmake --install build --prefix <dir>

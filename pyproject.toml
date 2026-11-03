@@ -10,10 +10,11 @@ build-backend = "scikit_build_core.build"
 [project]
 name = "mfaoa"
 dynamic = ["version"]
-description = "Binary quadratic optimization with the mean-field approximate optimization algorithm"
+description = "Binary quadratic optimization with MFAOA, the mean-field approximate optimization algorithm"
 license = "Apache-2.0"
 license-files = ["LICENSE"]
 authors = [{ name = "Tim Bode" }]
+maintainers = [{ name = "Quicopt" }]
 requires-python = ">=3.12"
 dependencies = ["numpy>=1.26", "scipy>=1.11.2"]
 keywords = ["optimization", "QUBO", "Ising", "binary quadratic programming", "max-cut", "Pyomo", "dimod"]

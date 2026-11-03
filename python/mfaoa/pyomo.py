@@ -304,7 +304,7 @@ def _schedule(options):
     return schedule_from(**options)
 
 
-@SolverFactory.register("mfaoa", doc="Mean-field AOA for binary quadratic problems without constraints")
+@SolverFactory.register("mfaoa", doc="MFAOA for binary quadratic problems without constraints")
 class MFAOA(SolverBase):
     """The MFAOA solver in Pyomo's solver interface; see the module docstring."""
 

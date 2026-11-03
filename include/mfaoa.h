@@ -1,5 +1,5 @@
 /*
- * mfaoa.h — the mean-field approximate optimization algorithm (mean-field AOA)
+ * mfaoa.h — the mean-field approximate optimization algorithm (MFAOA)
  * for binary quadratic problems, as a C library.
  *
  * The solver minimizes or maximizes
@@ -69,7 +69,7 @@ enum {
 
 /* A BLAS dgemv in the Fortran calling convention with 32-bit integers, as
  * scipy.linalg.cython_blas provides it: y = alpha A x + beta y for
- * trans = "N". mfaoa calls it with m = n = lda = n, incx = incy = 1,
+ * trans = "N". The library calls it with m = n = lda = n, incx = incy = 1,
  * alpha = beta = 1, and does not expect it to change A or x. */
 typedef void (*mfaoa_dgemv_fn)(char *trans, int *m, int *n, double *alpha, double *a,
                                int *lda, double *x, int *incx, double *beta, double *y,

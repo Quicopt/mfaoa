@@ -1,5 +1,5 @@
 """Binary quadratic optimization with the mean-field approximate optimization
-algorithm (mean-field AOA) of Misra-Spieldenner et al., PRX Quantum 4,
+algorithm (MFAOA) of Misra-Spieldenner et al., PRX Quantum 4,
 030335 (2023).
 
 State a problem as an `IsingProblem` (variables -1 and +1) or a

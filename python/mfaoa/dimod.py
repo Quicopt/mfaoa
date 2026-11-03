@@ -57,7 +57,7 @@ def ising_problem(bqm):
 
 
 class MFAOASampler(dimod.Sampler):
-    """The mean-field AOA as a dimod sampler; see the module docstring."""
+    """MFAOA as a dimod sampler; see the module docstring."""
 
     parameters = {"p": [], "tau": [], "beta": [], "gamma": []}
     properties = {}

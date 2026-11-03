@@ -1,5 +1,5 @@
 /*
- * mfaoa.c — the mean-field AOA, declared in include/mfaoa.h.
+ * mfaoa.c — the MFAOA solver, declared in include/mfaoa.h.
  *
  * A step costs one product of J with the vector of z components, and two
  * rotations per variable:
