@@ -375,3 +375,54 @@ def linear_schedule(p, tau=0.5):
         raise ValueError(f"need at least one step, got p = {p}")
     return Schedule(*_lib.linear_schedule(p, float(tau)))
 
+
+# The sparse product beats a dense one below about 25-30 % fill, measured for
+# MFAOA.jl on an Apple M4 with OpenBLAS for n = 500 to 2000.
+DENSE_FROM = 0.25
+
+
+def coupling_storage(A):
+    """Choose dense or sparse storage for a matrix of pair weights.
+
+    The Pyomo interface and the dimod sampler collect the terms of an
+    objective into a sparse matrix. The solve is faster with a dense one once
+    the pairs that A couples, the pattern of A + A.T, fill a quarter of it.
+
+    Args:
+        A: a square SciPy sparse matrix.
+
+    Returns:
+        A as a dense NumPy array when that pattern fills at least DENSE_FROM
+        of the matrix, and otherwise A itself.
+    """
+    n = A.shape[0]
+    pattern = abs(A) + abs(A.T)
+    return A.toarray() if pattern.nnz >= DENSE_FROM * n * n else A
+
+
+def schedule_from(p=None, tau=None, beta=None, gamma=None):
+    """The schedule that a front end's options ask for.
+
+    The Pyomo interface and the dimod sampler take the same four options as
+    `solve`.
+
+    Args:
+        p: the number of steps of the linear schedule (default 1000).
+        tau: its step size (default 0.5).
+        beta, gamma: an explicit schedule, used instead of the linear one.
+
+    Returns:
+        A `Schedule`: from beta and gamma when both are given, else the
+        linear schedule with p and tau.
+
+    Raises:
+        ValueError: only one of beta and gamma, or a tau that is not positive.
+    """
+    if (beta is None) != (gamma is None):
+        raise ValueError("Set both beta and gamma for a schedule of your own, or neither.")
+    if beta is not None:
+        return Schedule(beta, gamma)
+    tau = 0.5 if tau is None else tau
+    if not tau > 0:
+        raise ValueError(f"tau must be positive, got {tau}")
+    return linear_schedule(1000 if p is None else p, tau)

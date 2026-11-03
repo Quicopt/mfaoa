@@ -18,9 +18,11 @@ requires-python = ">=3.10"
 dependencies = ["numpy>=1.23", "scipy>=1.9"]
 
 [project.optional-dependencies]
-pyomo = ["pyomo>=6.9"]
+# Pyomo's solver interface (pyomo.contrib.solver) is still a preview; its
+# modules moved in 6.9.2 and again in 6.10.0.
+pyomo = ["pyomo>=6.10"]
 dimod = ["dimod>=0.12"]
-test = ["pytest"]
+test = ["pytest", "pyomo>=6.10", "dimod>=0.12"]
 
 [tool.scikit-build]
 minimum-version = "build-system.requires"
