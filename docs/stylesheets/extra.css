@@ -1,0 +1,116 @@
+/* ── Self-hosted Fira (SIL OFL 1.1; see ../fonts/LICENSE-Fira-OFL.txt) ─────────
+   No Google Fonts CDN call: the woff2 files ship in the repo under docs/fonts/. */
+
+@font-face {
+  font-family: "Fira Sans";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("../fonts/fira-sans-400.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Fira Sans";
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("../fonts/fira-sans-600.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Fira Sans";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("../fonts/fira-sans-700.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Fira Code";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("../fonts/fira-code-400.woff2") format("woff2");
+}
+
+:root {
+  --md-text-font: "Fira Sans";     /* body + headings */
+  --md-code-font: "Fira Code";     /* code spans and blocks */
+}
+
+/* ── Quicopt brand palette: blue #2d5faa + logo grey #333333 ──────────────────
+   `primary`/`accent` are set to `custom` in mkdocs.yml so these variables win. */
+
+[data-md-color-primary="custom"] {
+  --md-primary-fg-color:        #2d5faa;   /* header, nav, active items */
+  --md-primary-fg-color--light: #5a91cb;
+  --md-primary-fg-color--dark:  #24487f;
+}
+[data-md-color-accent="custom"] {
+  --md-accent-fg-color: #24487f;           /* link hover / active accents */
+}
+
+[data-md-color-scheme="default"] {
+  --md-typeset-color:   #333333;           /* body text in the logo grey */
+  --md-typeset-a-color: #2d5faa;           /* links in the brand blue */
+}
+[data-md-color-scheme="slate"] {
+  --md-primary-fg-color: #2d5faa;          /* dark-mode header bar in the brand blue */
+  --md-typeset-a-color:  #8ab3dd;          /* lighter blue for contrast on dark */
+  --md-accent-fg-color:  #5a91cb;
+}
+
+/* ── Per-scheme header + logo ─────────────────────────────────────────────────
+   Light: white header bar with dark controls, and the mfaoa mark.
+   Dark:  brand-blue header bar (the slate primary above), and the dark mark. */
+
+[data-md-color-scheme="default"] .md-header {
+  background-color: #ffffff;
+  color: #333333;                          /* title + icons follow via currentColor */
+  border-bottom: 1px solid #e6e6e6;        /* separate the white bar from the page */
+}
+[data-md-color-scheme="default"] .md-search__input {
+  background-color: rgba(0, 0, 0, 0.05);   /* visible search field on the white bar */
+  color: #333333;
+}
+[data-md-color-scheme="default"] .md-search__input::placeholder {
+  color: rgba(0, 0, 0, 0.5);
+}
+
+/* Swap the header mark for its dark version (lighter blues) — no second <img>. */
+[data-md-color-scheme="slate"] .md-logo img {
+  content: url("../assets/mark-dark.svg");
+}
+
+/* ── Worked examples read at the body's size ──────────────────────────────────
+   A docstring `Example:` renders as a <details>, which Material types at .64rem
+   against the body's .8rem — and the .85em code shrink then compounds on top,
+   leaving the examples at roughly two thirds of the prose around them. They are
+   the part most worth reading, not an aside, so they get the body size; that
+   also puts an example's code at the same size as a fenced block on any other
+   page. Raise the .8rem here to scale every admonition together. */
+
+.md-typeset .admonition,
+.md-typeset details {
+  font-size: .8rem;
+}
+
+/* ── Section headings in the table of contents ────────────────────────────────
+   A reference page groups its entries under plain-language headings (Orderings,
+   Groups, …). In the entries' own type they read as one more entry among the
+   code names beneath them, and bold alone is too faint at the sidebar's size, so
+   they are set in small capitals, in the link blue, with a bar of the same colour.
+   :where() keeps the colour rule weak enough for Material's hover colour to win,
+   and the bar is drawn in currentcolor, so it follows the text on hover. */
+
+:where(.md-nav--secondary > .md-nav__list > .md-nav__item) > .md-nav__link {
+  color: var(--md-typeset-a-color);
+}
+.md-nav--secondary > .md-nav__list > .md-nav__item > .md-nav__link {
+  font-size: .6rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  border-left: 3px solid currentcolor;
+  padding-left: .45em;
+}
+.md-nav--secondary > .md-nav__list > .md-nav__item + .md-nav__item {
+  margin-top: .9em;
+}
