@@ -289,9 +289,8 @@ must link the same BLAS as well; CMake and pkg-config add it.
 `-DMFAOA_BLAS=OFF` builds the library without a BLAS. A program must then
 pass a `dgemv` routine in every problem with dense couplings (see below).
 
-The library has been built and tested on macOS with Accelerate and with
-OpenBLAS. `mfaoa.h` declares the exports for a Windows DLL, but the build
-has not been tried on Windows.
+The library is built and tested on Linux with OpenBLAS, on macOS with
+Accelerate and with OpenBLAS, and on Windows without a BLAS.
 
 ### Using the library
 
