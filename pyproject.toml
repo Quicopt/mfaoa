@@ -37,6 +37,7 @@ classifiers = [
 ]
 
 [project.urls]
+Documentation = "https://quicopt.github.io/mfaoa/"
 Quicopt = "https://quicopt.com"
 Source = "https://github.com/Quicopt/mfaoa"
 Issues = "https://github.com/Quicopt/mfaoa/issues"
@@ -48,13 +49,16 @@ Issues = "https://github.com/Quicopt/mfaoa/issues"
 pyomo = ["pyomo>=6.10.1"]
 dimod = ["dimod>=0.12.14"]
 test = ["pytest", "pyomo>=6.10.1", "dimod>=0.12.14"]
+# The documentation site (mkdocs build / mkdocs serve); its examples run
+# at build time, so the build also needs the pyomo and dimod extras.
+docs = ["mkdocs-material>=9", "mkdocstrings[python]>=0.24", "markdown-exec>=1.9", "black"]
 
 [tool.scikit-build]
 minimum-version = "build-system.requires"
 cmake.version = ">=3.21"
 wheel.py-api = "py3"
 wheel.packages = ["python/mfaoa"]
-sdist.exclude = ["build", ".venv", "plan-*.md"]
+sdist.exclude = ["build", ".venv", "plan-*.md", "docs", "mkdocs.yml", "site", "gset"]
 
 [tool.scikit-build.cmake.define]
 MFAOA_BLAS = "OFF"

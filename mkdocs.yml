@@ -1,0 +1,101 @@
+site_name: mfaoa
+site_description: Binary quadratic optimization with MFAOA, the mean-field approximate optimization algorithm, from Pyomo, dimod, NumPy and SciPy.
+site_url: https://quicopt.github.io/mfaoa/
+repo_url: https://github.com/Quicopt/mfaoa
+repo_name: Quicopt/mfaoa
+edit_uri: edit/main/docs/
+copyright: Copyright &copy; 2026 Tim Bode
+
+theme:
+  name: material
+  font: false                      # self-hosted Fira, see docs/stylesheets/extra.css
+  logo: assets/mark.svg            # extra.css swaps in assets/mark-dark.svg in dark mode
+  favicon: assets/favicon.svg
+  icon:
+    repo: fontawesome/brands/github
+  features:
+    - navigation.sections
+    - navigation.top
+    - navigation.instant
+    - content.code.copy
+    - content.tabs.link            # picking Pyomo, dimod or NumPy in one tab set picks it everywhere
+    - toc.follow
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: custom              # the Quicopt blue, set in docs/stylesheets/extra.css
+      accent: custom
+      toggle:
+        icon: material/weather-night
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: custom
+      accent: custom
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to light mode
+
+extra_css:
+  - stylesheets/extra.css
+
+extra_javascript:
+  - javascripts/mathjax.js
+  - https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-mml-chtml.js
+
+plugins:
+  - search
+  # Code blocks marked exec="on" run when the site is built, and their output
+  # is shown below them; a failing example fails `mkdocs build --strict`.
+  - markdown-exec
+  - mkdocstrings:
+      handlers:
+        python:
+          paths: [python]
+          options:
+            docstring_style: google
+            docstring_options:
+              warn_missing_types: false    # the code has no type annotations
+              warn_unknown_params: false   # "beta, gamma:" documents a pair of parameters
+            docstring_section_style: table
+            show_root_heading: true
+            show_root_full_path: false
+            show_source: true
+            members_order: source
+            separate_signature: true
+            show_signature_annotations: true
+            signature_crossrefs: true
+            merge_init_into_class: true
+            filters: ["!^_"]
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - toc:
+      permalink: true
+  - pymdownx.arithmatex:
+      generic: true
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets:            # --8<-- "examples/solve.c" includes a file of the repository
+      base_path: ["."]
+      check_paths: true
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+
+nav:
+  - Home: index.md
+  - Tutorial:
+      - Max-Cut on the Gset graphs: tutorials/maxcut-gset.md
+  - Manual:
+      - Problem forms: manual/problems.md
+      - Pyomo: manual/pyomo.md
+      - dimod: manual/dimod.md
+      - NumPy and SciPy: manual/numpy.md
+      - Schedules and the field scale: manual/schedules.md
+      - Symmetric problems: manual/symmetry.md
+      - Performance: manual/performance.md
+  - The C library: c-library.md
+  - API reference: api.md

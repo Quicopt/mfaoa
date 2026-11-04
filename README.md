@@ -14,6 +14,7 @@
 
 [![PyPI](https://img.shields.io/pypi/v/mfaoa.svg)](https://pypi.org/project/mfaoa/)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://pypi.org/project/mfaoa/)
+[![Docs](https://img.shields.io/badge/docs-latest-blue.svg)](https://quicopt.github.io/mfaoa/)
 [![CI](https://github.com/Quicopt/mfaoa/actions/workflows/CI.yml/badge.svg?branch=main)](https://github.com/Quicopt/mfaoa/actions/workflows/CI.yml)
 [![License: Apache 2.0](https://img.shields.io/pypi/l/mfaoa.svg)](https://github.com/Quicopt/mfaoa/blob/main/LICENSE)
 
