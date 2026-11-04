@@ -12,6 +12,13 @@ from mfaoa import _lib
 CASES = read_cases()
 IDS = [c["name"] for c in CASES]
 
+# The reference runs come from MFAOA.jl, whose sin and cos differ from the C
+# library's in the last bits. The differences grow over a run: on x86-64
+# Linux and macOS, the z of random-schedule end up 1.2e-8 away, so z is
+# compared with this tolerance, as in test/check.c. The solution must agree
+# exactly.
+Z_TOLERANCE = 1e-6
+
 
 @pytest.mark.parametrize("case", CASES, ids=IDS)
 def test_binding_reproduces_reference_runs(case):
@@ -31,7 +38,7 @@ def test_binding_reproduces_reference_runs(case):
     )
     assert code == case["expect"]
     if code == _lib.OK:
-        np.testing.assert_allclose(ws["z"], case["z"], rtol=0, atol=1e-8)
+        np.testing.assert_allclose(ws["z"], case["z"], rtol=0, atol=Z_TOLERANCE)
         np.testing.assert_array_equal(ws["sigma"], case["sigma"])
     elif code == _lib.FLIP_SYMMETRIC:
         np.testing.assert_array_equal(ws["group"], case["group"])
@@ -54,7 +61,7 @@ def _problem(case):
 def test_solve_reproduces_reference_runs(case):
     """solve reproduces the reference runs that end with a solution."""
     result = mfaoa.solve(_problem(case), mfaoa.Schedule(case["beta"], case["gamma"]))
-    np.testing.assert_allclose(result.state.z, case["z"], rtol=0, atol=1e-8)
+    np.testing.assert_allclose(result.state.z, case["z"], rtol=0, atol=Z_TOLERANCE)
     np.testing.assert_array_equal(result.sigma, case["sigma"])
     np.testing.assert_array_equal(result.x, (case["sigma"] + 1) // 2)
 
@@ -90,5 +97,5 @@ def test_linear_schedule_matches_reference():
 
 def test_versions_agree():
     """The header, the loaded library and the package report the same version."""
-    header = re.search(r'#define MFAOA_VERSION "([^"]+)"', HEADER.read_text()).group(1)
+    header = re.search(r'#define MFAOA_VERSION "([^"]+)"', HEADER.read_text(encoding="utf-8")).group(1)
     assert _lib.version() == header == _lib.HEADER_VERSION == mfaoa.__version__

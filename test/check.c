@@ -8,8 +8,11 @@
  * for a problem rejected as flip-symmetric, the groups and flags that the
  * workspace reports. The expected results were computed with MFAOA.jl 0.1,
  * an independent implementation of the algorithm in Julia. The z
- * components may differ in the last bits, from another BLAS or another
- * sin and cos, so they are compared with a tolerance; σ must agree exactly.
+ * components differ in the last bits, from another BLAS or another sin
+ * and cos, and the differences grow over the steps of a run: on x86-64
+ * Linux and macOS, the z of the case random-schedule end up 1.2e-8 away.
+ * So z is compared with a tolerance of 1e-6, which leaves room for other
+ * platforms; σ must agree exactly.
  *
  * Every case with dense couplings runs twice: with the library's own BLAS
  * and with a dgemv passed in the problem, as the Python package passes
@@ -137,7 +140,7 @@ static int run_case(const golden_case *c, mfaoa_dgemv_fn dgemv)
             dz = fmax(dz, fabs(ws.z[i] - c->z[i]));
             flips += ws.sigma[i] != c->sigma[i];
         }
-        ok = dz <= 1e-8 && flips == 0;
+        ok = dz <= 1e-6 && flips == 0;
     } else if (ok && code == MFAOA_FLIP_SYMMETRIC) {
         for (size_t i = 0; i < n; i++)
             flips += ws.group[i] != c->group[i] || ws.sigma[i] != c->sigma[i];
