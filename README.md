@@ -12,12 +12,11 @@
   </a>
 </p>
 
-| **Documentation** | **Paper** |
-|:-----------------:|:---------:|
-| [![Docs](https://img.shields.io/badge/docs-latest-blue.svg)](https://quicopt.github.io/mfaoa/) | [![Journal](https://img.shields.io/badge/Journal-PRX%20Quantum-b31b1b.svg)](https://doi.org/10.1103/PRXQuantum.4.030335)[![arXiv](https://img.shields.io/badge/arXiv-2303.00329-ca5f5f.svg)](https://arxiv.org/abs/2303.00329) |
-
 [![PyPI](https://img.shields.io/pypi/v/mfaoa.svg)](https://pypi.org/project/mfaoa/)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://pypi.org/project/mfaoa/)
+[![Docs](https://img.shields.io/badge/docs-latest-blue.svg)](https://quicopt.github.io/mfaoa/)
+[![Journal](https://img.shields.io/badge/Journal-PRX%20Quantum-b31b1b.svg)](https://doi.org/10.1103/PRXQuantum.4.030335)
+[![arXiv](https://img.shields.io/badge/arXiv-2303.00329-ca5f5f.svg)](https://arxiv.org/abs/2303.00329)
 [![CI](https://github.com/Quicopt/mfaoa/actions/workflows/CI.yml/badge.svg?branch=main)](https://github.com/Quicopt/mfaoa/actions/workflows/CI.yml)
 [![License: Apache 2.0](https://img.shields.io/pypi/l/mfaoa.svg)](https://github.com/Quicopt/mfaoa/blob/main/LICENSE)
 
